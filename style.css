@@ -1,4 +1,4 @@
-/* style.css — FULL FILE (overlay/touch fix + clean mobile layout) */
+/* style.css — FULL FILE (FIX: make game fill iPhone screen + safe-area controls) */
 :root{
   --bg:#0b0f14;
   --panel:#111826;
@@ -28,7 +28,7 @@ body{
   border-bottom:1px solid var(--line);
   background: rgba(10,14,22,.75);
   backdrop-filter: blur(8px);
-  gap: 12px;
+  gap:12px;
 }
 
 .brand{display:flex; gap:12px; align-items:center}
@@ -57,27 +57,49 @@ body{
 .hudItem span{color:var(--muted); font-size:12px}
 .hudItem b{font-size:14px}
 
-.wrap{max-width:1100px; margin:0 auto; padding:18px 16px}
+/* ===== Layout ===== */
+.wrap{
+  max-width:1100px;
+  margin:0 auto;
+  padding:12px 12px 18px;
+}
+
+/* IMPORTANT: make the game use real screen height on phones */
 .gameShell{
   position:relative;
   border:1px solid var(--line);
   border-radius:16px;
   overflow:hidden;
   background: rgba(0,0,0,.25);
-  touch-action:none; /* critical for iPhone controls */
+  touch-action:none;
+
+  /* desktop default */
+  height: 620px;
 }
+
+/* On phones: fill the viewport under the header */
+@media (max-width: 700px){
+  .wrap{padding:10px 10px 14px}
+  .gameShell{
+    height: calc(100svh - 86px - 24px);
+    /* 86px = typical header height; if your header wraps, it still works decently */
+    min-height: 520px;
+  }
+}
+
+/* Make canvas stretch to the container height */
 canvas{
   width:100%;
-  height:auto;
+  height:100%;
   display:block;
 }
 
-/* IMPORTANT: overlay must be above touch controls */
+/* ===== Overlay must be above touch controls ===== */
 .overlay{
   position:absolute; inset:0;
   display:grid; place-items:center;
   background: rgba(3,6,12,.78);
-  z-index: 50;
+  z-index:50;
   pointer-events:auto;
 }
 
@@ -115,23 +137,24 @@ button:active{transform: translateY(1px)}
   font-size:12px;
   opacity:0;
   transform: translateY(6px);
-  transition: .2s ease;
+  transition:.2s ease;
   pointer-events:none;
-  z-index: 60; /* above everything */
+  z-index:60;
 }
 .toast.show{opacity:1; transform: translateY(0)}
 
 /* ===== Touch Controls ===== */
 .touchUI{
   position:absolute;
-  inset:auto 0 0 0;
+  left:0; right:0; bottom:0;
   display:flex;
   justify-content:space-between;
   align-items:flex-end;
   padding:12px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom)); /* iPhone safe area */
   gap:12px;
   pointer-events:none;
-  z-index: 10; /* BELOW overlay */
+  z-index:10;
 }
 
 .pad, .btnCluster{
