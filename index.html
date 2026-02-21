@@ -1,232 +1,59 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-<title>Split Alley – Discovery Run (Codename: SHADY)</title>
-<style>
-  :root{
-    --bg:#07070a; --panel:rgba(0,0,0,.82); --txt:#e8e8f0; --muted:#a9a9c2;
-    --accent:#ff2d55; --good:#2cff78; --warn:#ffcc00; --cyan:#00ffd5;
-  }
-  html,body{ height:100%; margin:0; background:var(--bg); color:var(--txt); font-family: ui-monospace, Menlo, Consolas, monospace; }
-  #wrap{ display:flex; flex-direction:column; height:100%; }
-  canvas{ width:min(100vw,860px); margin:0 auto; background:#0b0b12; image-rendering: pixelated; touch-action:none; border-bottom:1px solid rgba(255,255,255,.08); }
-  #ui{ width:min(100vw,860px); margin:0 auto; padding:10px 12px; background:var(--panel); position:sticky; bottom:0; backdrop-filter: blur(8px); }
-  .row{ display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
-  .title{ font-weight:700; letter-spacing:.5px; }
-  .small{ font-size:12px; color:var(--muted); }
-  .bar{ height:10px; background:rgba(255,255,255,.08); border-radius:6px; overflow:hidden; flex:1; min-width:120px; }
-  .fill{ height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--cyan)); transition:width .08s linear; }
-  .stats{ display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin-top:6px; }
-  .stat{ background:#121224; border:1px solid rgba(255,255,255,.12); border-radius:10px; padding:6px 8px; font-size:12px; }
-  .btns{ display:flex; gap:8px; flex-wrap:wrap; }
-  button{ background:#151522; color:var(--txt); border:1px solid rgba(255,255,255,.14); padding:10px 12px; border-radius:10px; font-size:14px; }
-  #log{ margin-top:8px; line-height:1.25; }
-  .choices{ margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; }
-  .choiceBtn{ background:#10101d; }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MrNic5Guy: Wasteland Runners</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<div id="wrap">
-  <canvas id="game" width="320" height="200"></canvas>
-
-  <div id="ui">
-    <div class="row">
-      <div>
-        <div class="title">SPLIT ALLEY <span class="small">— fog run (codename: SHADY)</span></div>
-        <div class="small">Swipe to move. Each new square reveals an event. Choose wisely.</div>
-      </div>
-      <div class="btns">
-        <button id="resetBtn">RESET RUN</button>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">W</div>
+      <div class="titles">
+        <div class="title">MrNic5Guy: Wasteland Runners</div>
+        <div class="subtitle">Run • Gun • Momentum</div>
       </div>
     </div>
 
-    <div class="stats">
-      <div class="stat">Split: <b id="splitNum">10%</b><div class="bar"><div class="fill" id="splitFill"></div></div></div>
-      <div class="stat">Rep: <b id="repNum">0</b></div>
-      <div class="stat">Bars: <b id="barsNum">0</b></div>
-      <div class="stat">Health: <b id="hpNum">100</b></div>
+    <div class="hud">
+      <div class="hudItem"><span>HP</span><b id="hpText">100</b></div>
+      <div class="hudItem"><span>Ammo</span><b id="ammoText">∞</b></div>
+      <div class="hudItem"><span>Gren</span><b id="grenText">3</b></div>
+      <div class="hudItem"><span>Score</span><b id="scoreText">0</b></div>
+      <div class="hudItem"><span>Wave</span><b id="waveText">1</b></div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="gameShell">
+      <canvas id="game" width="960" height="540"></canvas>
+
+      <div class="overlay" id="overlay">
+        <div class="panel">
+          <div class="panelTitle">Controls</div>
+          <ul>
+            <li><b>A/D</b> move, <b>W</b> jump, <b>S</b> slide</li>
+            <li><b>J</b> shoot, <b>K</b> grenade, <b>L</b> dash</li>
+            <li><b>P</b> pause, <b>R</b> restart</li>
+          </ul>
+          <div class="panelHint">Tip: keep moving to build <b>Momentum</b> for faster fire + shorter dash cooldown.</div>
+          <button id="startBtn">Start</button>
+        </div>
+      </div>
+
+      <div class="toast" id="toast"></div>
     </div>
 
-    <div id="log">The city is blank. Each step writes a line.</div>
-    <div class="choices" id="choices"></div>
-  </div>
-</div>
+    <section class="notes">
+      <h2>MrNic5Guy Version</h2>
+      <p>
+        Original run-and-gun with momentum, drones, raiders, and boss waves.
+        No copied Metal Slug assets—this is a fresh build designed to replace your old web game.
+      </p>
+    </section>
+  </main>
 
-<script>
-const c = document.getElementById("game");
-const ctx = c.getContext("2d");
-ctx.imageSmoothingEnabled = false;
-
-const resetBtn = document.getElementById("resetBtn");
-const splitFill = document.getElementById("splitFill");
-const splitNum = document.getElementById("splitNum");
-const repNum = document.getElementById("repNum");
-const barsNum = document.getElementById("barsNum");
-const hpNum = document.getElementById("hpNum");
-const logEl = document.getElementById("log");
-const choicesEl = document.getElementById("choices");
-
-const W=16, H=10, TS=20;
-const rand = n=>Math.floor(Math.random()*n);
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-
-const state = {
-  px: 8, py: 5,
-  fog: Array.from({length:H},()=>Array(W).fill(false)),
-  split: 10, rep: 0, bars: 0, hp: 100,
-  ended: false
-};
-
-function drawTile(x,y,fill,stroke){
-  ctx.fillStyle=fill; ctx.fillRect(x*TS,y*TS,TS-2,TS-2);
-  if(stroke){ ctx.strokeStyle=stroke; ctx.strokeRect(x*TS+.5,y*TS+.5,TS-3,TS-3); }
-}
-function glitch(i){
-  const lines=Math.floor(i*8); ctx.globalAlpha=.1+i*.25;
-  for(let k=0;k<lines;k++){ const y=rand(c.height); ctx.fillStyle=k%2?"#00ffd5":"#ff2d55"; ctx.fillRect(0,y,c.width,1); }
-  ctx.globalAlpha=1;
-}
-function draw(){
-  ctx.clearRect(0,0,c.width,c.height);
-  ctx.fillStyle="#0b0b12"; ctx.fillRect(0,0,c.width,c.height);
-
-  for(let y=0;y<H;y++){
-    for(let x=0;x<W;x++){
-      if(state.fog[y][x]) drawTile(x,y,"#0e0f18","rgba(255,255,255,.05)");
-      else drawTile(x,y,"#07070a","rgba(255,255,255,.02)");
-    }
-  }
-
-  // player
-  drawTile(state.px,state.py,"rgba(44,255,120,.35)","rgba(44,255,120,.9)");
-  glitch(state.split/100);
-}
-
-function updateUI(){
-  splitFill.style.width = state.split + "%";
-  splitNum.textContent = Math.round(state.split) + "%";
-  repNum.textContent = state.rep;
-  barsNum.textContent = state.bars;
-  hpNum.textContent = state.hp;
-}
-
-const EVENTS = [
-  {
-    t:"A heckler corners you with rumors. Codename: SHADY watches.",
-    choices:[
-      { label:"Clap back (Rep +5, Split +5)", eff:()=>{state.rep+=5; state.split+=5;} },
-      { label:"Walk away (Split -5)", eff:()=>{state.split-=5;} },
-      { label:"Pay it off (Bars -5, Rep +2)", eff:()=>{state.bars=Math.max(0,state.bars-5); state.rep+=2;} },
-    ]
-  },
-  {
-    t:"You find a burnt notebook of half-written bars.",
-    choices:[
-      { label:"Pocket it (Bars +10, Split +5)", eff:()=>{state.bars+=10; state.split+=5;} },
-      { label:"Read it aloud (Rep +4, HP -5)", eff:()=>{state.rep+=4; state.hp-=5;} },
-    ]
-  },
-  {
-    t:"A backroom stage offers a risky open mic.",
-    choices:[
-      { label:"Go on stage (Rep +8, Split +8)", eff:()=>{state.rep+=8; state.split+=8;} },
-      { label:"No show (Split -4)", eff:()=>{state.split-=4;} },
-    ]
-  },
-  {
-    t:"Tabloids print your shadow, not your face.",
-    choices:[
-      { label:"Lean into it (Rep +6, Split +6)", eff:()=>{state.rep+=6; state.split+=6;} },
-      { label:"Lawyer up (Bars -8, Split -4)", eff:()=>{state.bars=Math.max(0,state.bars-8); state.split-=4;} },
-    ]
-  },
-  {
-    t:"A late-night studio session drains you.",
-    choices:[
-      { label:"Grind through (Bars +6, HP -6)", eff:()=>{state.bars+=6; state.hp-=6;} },
-      { label:"Call it (Split -6)", eff:()=>{state.split-=6;} },
-    ]
-  },
-];
-
-function triggerEvent(){
-  const e = EVENTS[rand(EVENTS.length)];
-  logEl.textContent = e.t;
-  choicesEl.innerHTML = "";
-  e.choices.forEach(ch=>{
-    const b=document.createElement("button");
-    b.className="choiceBtn";
-    b.textContent = ch.label;
-    b.onclick = ()=>{
-      ch.eff();
-      state.split = clamp(state.split,0,100);
-      state.hp = clamp(state.hp,0,100);
-      updateUI();
-      choicesEl.innerHTML="";
-      logEl.textContent = "The block settles. The city remembers your choice.";
-      checkEnd();
-      draw();
-    };
-    choicesEl.appendChild(b);
-  });
-}
-
-function checkEnd(){
-  if(state.hp<=0){
-    state.ended=true;
-    logEl.textContent="You collapse. Codename: SHADY keeps walking. END.";
-  }
-  if(state.split>=100){
-    state.ended=true;
-    logEl.textContent="You merge with the shadow. The city blurs into one voice. END.";
-  }
-  if(state.rep>=40 && state.bars>=40){
-    state.ended=true;
-    logEl.textContent="You outgrow the alley. Shady fades to rumor. END.";
-  }
-}
-
-function move(dx,dy){
-  if(state.ended) return;
-  const nx=clamp(state.px+dx,0,W-1);
-  const ny=clamp(state.py+dy,0,H-1);
-  state.px=nx; state.py=ny;
-
-  if(!state.fog[ny][nx]){
-    state.fog[ny][nx]=true;
-    triggerEvent();
-  } else {
-    logEl.textContent="Old ground. The city’s already said this part.";
-  }
-
-  state.split = clamp(state.split+1,0,100);
-  updateUI();
-  draw();
-}
-
-/* Swipe */
-let t0=null;
-c.addEventListener("touchstart",e=>{const t=e.changedTouches[0]; t0={x:t.clientX,y:t.clientY};},{passive:false});
-c.addEventListener("touchend",e=>{
-  if(!t0) return; const t=e.changedTouches[0]; const dx=t.clientX-t0.x, dy=t.clientY-t0.y; t0=null;
-  if(Math.max(Math.abs(dx),Math.abs(dy))<18) return;
-  Math.abs(dx)>Math.abs(dy) ? move(dx>0?1:-1,0) : move(0,dy>0?1:-1);
-},{passive:false});
-
-function reset(){
-  state.px=8; state.py=5;
-  state.fog = Array.from({length:H},()=>Array(W).fill(false));
-  state.fog[state.py][state.px]=true;
-  state.split=10; state.rep=0; state.bars=0; state.hp=100; state.ended=false;
-  logEl.textContent="The city is blank. Each step writes a line.";
-  choicesEl.innerHTML="";
-  updateUI(); draw();
-}
-
-resetBtn.onclick = reset;
-reset(); draw();
-</script>
+  <script src="game.js"></script>
 </body>
 </html>
