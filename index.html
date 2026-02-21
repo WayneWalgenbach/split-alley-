@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>MrNic5Guy: Wasteland Runners</title>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -31,27 +31,35 @@
 
       <div class="overlay" id="overlay">
         <div class="panel">
-          <div class="panelTitle">Controls</div>
+          <div class="panelTitle">Touch Controls (iPhone)</div>
           <ul>
-            <li><b>A/D</b> move, <b>W</b> jump, <b>S</b> slide</li>
-            <li><b>J</b> shoot, <b>K</b> grenade, <b>L</b> dash</li>
-            <li><b>P</b> pause, <b>R</b> restart</li>
+            <li><b>Left pad</b>: move</li>
+            <li><b>Right buttons</b>: Jump / Shoot / Grenade / Dash</li>
+            <li><b>Slide</b>: Slide button</li>
           </ul>
           <div class="panelHint">Tip: keep moving to build <b>Momentum</b> for faster fire + shorter dash cooldown.</div>
           <button id="startBtn">Start</button>
         </div>
       </div>
 
+      <!-- Mobile controls -->
+      <div class="touchUI" id="touchUI" aria-hidden="true">
+        <div class="pad" id="pad">
+          <button class="padBtn" id="btnLeft">◀</button>
+          <button class="padBtn" id="btnRight">▶</button>
+        </div>
+
+        <div class="btnCluster">
+          <button class="actBtn" id="btnJump">JUMP</button>
+          <button class="actBtn" id="btnShoot">SHOOT</button>
+          <button class="actBtn" id="btnGren">GREN</button>
+          <button class="actBtn" id="btnDash">DASH</button>
+          <button class="actBtn" id="btnSlide">SLIDE</button>
+        </div>
+      </div>
+
       <div class="toast" id="toast"></div>
     </div>
-
-    <section class="notes">
-      <h2>MrNic5Guy Version</h2>
-      <p>
-        Original run-and-gun with momentum, drones, raiders, and boss waves.
-        No copied Metal Slug assets—this is a fresh build designed to replace your old web game.
-      </p>
-    </section>
   </main>
 
   <script src="game.js"></script>
