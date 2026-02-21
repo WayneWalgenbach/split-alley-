@@ -1,3 +1,4 @@
+/* style.css — FULL FILE (overlay/touch fix + clean mobile layout) */
 :root{
   --bg:#0b0f14;
   --panel:#111826;
@@ -63,7 +64,7 @@ body{
   border-radius:16px;
   overflow:hidden;
   background: rgba(0,0,0,.25);
-  touch-action:none;
+  touch-action:none; /* critical for iPhone controls */
 }
 canvas{
   width:100%;
@@ -75,9 +76,9 @@ canvas{
 .overlay{
   position:absolute; inset:0;
   display:grid; place-items:center;
-  background: rgba(3,6,12,.75);
+  background: rgba(3,6,12,.78);
   z-index: 50;
-  pointer-events: auto;
+  pointer-events:auto;
 }
 
 .panel{
@@ -90,6 +91,7 @@ canvas{
 .panelTitle{font-size:18px; font-weight:900; margin-bottom:10px}
 .panel ul{margin:0 0 12px 18px; color:var(--muted)}
 .panelHint{color:var(--muted); font-size:13px; margin-bottom:12px}
+
 button{
   appearance:none;
   border:1px solid rgba(103,232,249,.45);
@@ -115,7 +117,7 @@ button:active{transform: translateY(1px)}
   transform: translateY(6px);
   transition: .2s ease;
   pointer-events:none;
-  z-index: 60;
+  z-index: 60; /* above everything */
 }
 .toast.show{opacity:1; transform: translateY(0)}
 
@@ -129,7 +131,7 @@ button:active{transform: translateY(1px)}
   padding:12px;
   gap:12px;
   pointer-events:none;
-  z-index: 10;
+  z-index: 10; /* BELOW overlay */
 }
 
 .pad, .btnCluster{
@@ -161,9 +163,6 @@ button:active{transform: translateY(1px)}
   font-weight:900;
   letter-spacing:.2px;
 }
-
-/* Hide touch buttons while menu/overlay is up */
-.touchUI.hidden{ display:none; }
 
 @media (min-width: 900px){
   .padBtn{width:62px; height:62px}
