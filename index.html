@@ -4,18 +4,17 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>MrNic5Guy: Wasteland Runners</title>
-  <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="topbar">
     <div class="brand">
       <div class="logo">W</div>
-      <div class="titles">
+      <div>
         <div class="title">MrNic5Guy: Wasteland Runners</div>
         <div class="subtitle">Run • Gun • Boom</div>
       </div>
     </div>
-
     <div class="hud">
       <div class="hudItem"><span>HP</span><b id="hpText">100</b></div>
       <div class="hudItem"><span>Ammo</span><b id="ammoText">∞</b></div>
@@ -29,39 +28,37 @@
     <div class="gameShell">
       <canvas id="game" width="960" height="540"></canvas>
 
-      <div class="overlay" id="overlay">
+      <div id="overlay" class="overlay">
         <div class="panel">
-          <div class="panelTitle" id="panelTitle">Touch Controls (iPhone)</div>
+          <div id="panelTitle" class="panelTitle">Touch Controls (iPhone)</div>
           <ul>
             <li><b>Left pad</b>: move</li>
             <li><b>Right buttons</b>: Jump / Shoot / Grenade / Dash</li>
             <li><b>Slide</b>: Slide button</li>
           </ul>
-          <div class="panelHint">Tip: keep moving to build <b>Momentum</b> (faster fire + shorter dash cooldown).</div>
+          <div class="panelHint">Tip: keep moving to build Momentum.</div>
           <button id="startBtn">Start</button>
         </div>
       </div>
 
-      <!-- Mobile controls -->
-      <div class="touchUI" id="touchUI">
-        <div class="pad">
-          <button class="padBtn" id="btnLeft">◀</button>
-          <button class="padBtn" id="btnRight">▶</button>
-        </div>
+      <div id="toast" class="toast"></div>
 
+      <div id="touchUI" class="touchUI">
+        <div class="pad">
+          <button id="btnLeft" class="padBtn">◀</button>
+          <button id="btnRight" class="padBtn">▶</button>
+        </div>
         <div class="btnCluster">
-          <button class="actBtn" id="btnJump">JUMP</button>
-          <button class="actBtn" id="btnShoot">SHOOT</button>
-          <button class="actBtn" id="btnGren">GREN</button>
-          <button class="actBtn" id="btnDash">DASH</button>
-          <button class="actBtn" id="btnSlide">SLIDE</button>
+          <button id="btnJump" class="actBtn">JUMP</button>
+          <button id="btnShoot" class="actBtn">SHOOT</button>
+          <button id="btnGren" class="actBtn">GREN</button>
+          <button id="btnDash" class="actBtn">DASH</button>
+          <button id="btnSlide" class="actBtn">SLIDE</button>
         </div>
       </div>
-
-      <div class="toast" id="toast"></div>
     </div>
   </main>
 
-  <script src="./game.js"></script>
+  <script src="game.js"></script>
 </body>
 </html>
