@@ -1,1 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Split Alley – Prototype</title>
+<style>
+  body { margin:0; background:#0a0a0a; color:#eaeaea; font-family: monospace; }
+  canvas { display:block; margin:0 auto; background:#111; image-rendering: pixelated; }
+  #ui {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.85);
+    padding: 10px; text-align: center;
+  }
+  button {
+    background:#1f1f1f; color:#fff; border:1px solid #444;
+    padding:10px 14px; margin:4px; font-size:14px;
+  }
+  #log { font-size:12px; opacity:0.85; }
+</style>
+</head>
+<body>
+<canvas id="game" width="240" height="160"></canvas>
+<div id="ui">
+  <div>
+    <button onclick="move('left')">◀️ Left</button>
+    <button onclick="move('up')">⬆️ Up</button>
+    <button onclick="move('down')">⬇️ Down</button>
+    <button onclick="move('right')">▶️ Right</button>
+  </div>
+  <div>
+    <button onclick="scan()">Scan</button>
+    <button onclick="confront()">Confront</button>
+  </div>
+  <div id="log">Find your Echo in the alley.</div>
+</div>
 
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+ctx.imageSmoothingEnabled = false;
+
+let player = { x: 5, y: 5 };
+let echo = { x: Math.floor(Math.random()*10), y: Math.floor(Math.random()*7) };
+let split = 0;
+let log = document.getElementById("log");
+
+function draw() {
+  ctx.clearRect(0,0,240,160);
+
+  // grid
+  for (let y=0;y<8;y++){
+    for (let x=0;x<12;x++){
+      ctx.fillStyle = "#1a1a1a";
+      ctx.fillRect(x*20, y*20, 18, 18);
+    }
+  }
+
+  // echo shimmer
+  ctx.fillStyle = "rgba(200,40,40,0.5)";
+  ctx.fillRect(echo.x*20, echo.y*20, 18, 18);
+
+  // player
+  ctx.fillStyle = "#3cff3c";
+  ctx.fillRect(player.x*20, player.y*20, 18, 18);
+
+  // split meter
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0,150,240,10);
+  ctx.fillStyle = "#c42b2b";
+  ctx.fillRect(0,150, 240*(split/100), 10);
+}
+
+function move(dir){
+  if (dir==="left") player.x = Math.max(0, player.x-1);
+  if (dir==="right") player.x = Math.min(11, player.x+1);
+  if (dir==="up") player.y = Math.max(0, player.y-1);
+  if (dir==="down") player.y = Math.min(7, player.y+1);
+  split = Math.min(100, split + 2);
+  draw();
+}
+
+function scan(){
+  const d = Math.abs(player.x-echo.x)+Math.abs(player.y-echo.y);
+  log.innerText = d <= 2 ? "You feel your Echo nearby…" : "Silence. It moved.";
+  // Echo relocates slightly
+  echo.x = Math.min(11, Math.max(0, echo.x + (Math.random()>0.5?1:-1)));
+  echo.y = Math.min(7, Math.max(0, echo.y + (Math.random()>0.5?1:-1)));
+  split = Math.min(100, split + 5);
+  draw();
+}
+
+function confront(){
+  if (player.x === echo.x && player.y === echo.y) {
+    log.innerText = "You confronted your Echo. The alley goes quiet.";
+    split = 0;
+    echo.x = Math.floor(Math.random()*10);
+    echo.y = Math.floor(Math.random()*7);
+  } else {
+    log.innerText = "You swing at shadows. Your Echo laughs somewhere.";
+    split = Math.min(100, split + 10);
+  }
+  draw();
+}
+
+draw();
+</script>
+</body>
+</html>
