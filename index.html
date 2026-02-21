@@ -3,46 +3,28 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-<title>Split Alley – Pre-Alpha</title>
+<title>Split Alley – Discovery Run (Codename: SHADY)</title>
 <style>
   :root{
     --bg:#07070a; --panel:rgba(0,0,0,.82); --txt:#e8e8f0; --muted:#a9a9c2;
-    --accent:#ff2d55; --good:#2cff78; --warn:#ffcc00;
+    --accent:#ff2d55; --good:#2cff78; --warn:#ffcc00; --cyan:#00ffd5;
   }
-  html,body{ height:100%; margin:0; background:var(--bg); color:var(--txt); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+  html,body{ height:100%; margin:0; background:var(--bg); color:var(--txt); font-family: ui-monospace, Menlo, Consolas, monospace; }
   #wrap{ display:flex; flex-direction:column; height:100%; }
-  canvas{
-    width: min(100vw, 860px);
-    height: auto;
-    margin: 0 auto;
-    background: #0b0b12;
-    image-rendering: pixelated;
-    touch-action: none;
-    border-bottom: 1px solid rgba(255,255,255,.08);
-  }
-  #ui{
-    width: min(100vw, 860px);
-    margin: 0 auto;
-    padding: 10px 12px;
-    background: var(--panel);
-    position: sticky;
-    bottom: 0;
-    backdrop-filter: blur(8px);
-  }
+  canvas{ width:min(100vw,860px); margin:0 auto; background:#0b0b12; image-rendering: pixelated; touch-action:none; border-bottom:1px solid rgba(255,255,255,.08); }
+  #ui{ width:min(100vw,860px); margin:0 auto; padding:10px 12px; background:var(--panel); position:sticky; bottom:0; backdrop-filter: blur(8px); }
   .row{ display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
   .title{ font-weight:700; letter-spacing:.5px; }
   .small{ font-size:12px; color:var(--muted); }
-  .bar{ height:10px; background: rgba(255,255,255,.08); border-radius:6px; overflow:hidden; flex:1; min-width:180px; }
-  .fill{ height:100%; width:0%; background: var(--accent); transition: width .08s linear; }
+  .bar{ height:10px; background:rgba(255,255,255,.08); border-radius:6px; overflow:hidden; flex:1; min-width:120px; }
+  .fill{ height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--cyan)); transition:width .08s linear; }
+  .stats{ display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin-top:6px; }
+  .stat{ background:#121224; border:1px solid rgba(255,255,255,.12); border-radius:10px; padding:6px 8px; font-size:12px; }
   .btns{ display:flex; gap:8px; flex-wrap:wrap; }
-  button{
-    background:#151522; color:var(--txt); border:1px solid rgba(255,255,255,.14);
-    padding:10px 12px; border-radius:10px; font-size:14px;
-  }
-  button:active{ transform: translateY(1px); }
+  button{ background:#151522; color:var(--txt); border:1px solid rgba(255,255,255,.14); padding:10px 12px; border-radius:10px; font-size:14px; }
   #log{ margin-top:8px; line-height:1.25; }
-  .choice{ margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; }
-  .pill{ padding:6px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.14); font-size:12px; color:var(--muted); }
+  .choices{ margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; }
+  .choiceBtn{ background:#10101d; }
 </style>
 </head>
 <body>
@@ -52,400 +34,199 @@
   <div id="ui">
     <div class="row">
       <div>
-        <div class="title">SPLIT ALLEY <span class="pill" id="phase">Phase: TRACE</span></div>
-        <div class="small">Swipe to move. Tap <b>SCAN</b> to sense Echo. Tap <b>CONFRONT</b> on the same tile.</div>
+        <div class="title">SPLIT ALLEY <span class="small">— fog run (codename: SHADY)</span></div>
+        <div class="small">Swipe to move. Each new square reveals an event. Choose wisely.</div>
       </div>
       <div class="btns">
-        <button id="scanBtn">SCAN</button>
-        <button id="confBtn">CONFRONT</button>
-        <button id="resetBtn">RESET</button>
+        <button id="resetBtn">RESET RUN</button>
       </div>
     </div>
 
-    <div class="row" style="margin-top:10px;">
-      <div class="small" style="min-width:78px;">SPLIT</div>
-      <div class="bar"><div class="fill" id="splitFill"></div></div>
-      <div class="small" id="splitNum" style="min-width:54px; text-align:right;">0%</div>
+    <div class="stats">
+      <div class="stat">Split: <b id="splitNum">10%</b><div class="bar"><div class="fill" id="splitFill"></div></div></div>
+      <div class="stat">Rep: <b id="repNum">0</b></div>
+      <div class="stat">Bars: <b id="barsNum">0</b></div>
+      <div class="stat">Health: <b id="hpNum">100</b></div>
     </div>
 
-    <div id="log">You wake in the alley. Two footprints. One of them is yours.</div>
-    <div class="choice" id="choices" style="display:none;"></div>
+    <div id="log">The city is blank. Each step writes a line.</div>
+    <div class="choices" id="choices"></div>
   </div>
 </div>
 
 <script>
-/* ====== Core ====== */
 const c = document.getElementById("game");
 const ctx = c.getContext("2d");
 ctx.imageSmoothingEnabled = false;
 
-const scanBtn = document.getElementById("scanBtn");
-const confBtn = document.getElementById("confBtn");
 const resetBtn = document.getElementById("resetBtn");
 const splitFill = document.getElementById("splitFill");
 const splitNum = document.getElementById("splitNum");
+const repNum = document.getElementById("repNum");
+const barsNum = document.getElementById("barsNum");
+const hpNum = document.getElementById("hpNum");
 const logEl = document.getElementById("log");
-const phaseEl = document.getElementById("phase");
 const choicesEl = document.getElementById("choices");
 
-const W = 16, H = 10;          // grid cells
-const TS = 20;                 // tile size (px) inside canvas space
-const ox = 0, oy = 0;
-
-const rand = (n)=>Math.floor(Math.random()*n);
-const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+const W=16, H=10, TS=20;
+const rand = n=>Math.floor(Math.random()*n);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
 const state = {
-  player:{x:2,y:7},
-  echo:{x:rand(W), y:rand(H)},
-  split:0, // 0..100
-  tick:0,
-  phase:"TRACE", // TRACE -> HUNT -> MIRROR -> END
-  clue:{x:rand(W), y:rand(H)},
-  mirror:{x:rand(W), y:rand(H)},
-  seenEcho:false,
-  ended:false,
-  ending:null,
+  px: 8, py: 5,
+  fog: Array.from({length:H},()=>Array(W).fill(false)),
+  split: 10, rep: 0, bars: 0, hp: 100,
+  ended: false
 };
 
-function setLog(t){ logEl.textContent = t; }
-
-function setPhase(p){
-  state.phase = p;
-  phaseEl.textContent = `Phase: ${p}`;
-}
-
-function bumpSplit(amount){
-  state.split = clamp(state.split + amount, 0, 100);
-  splitFill.style.width = state.split + "%";
-  splitNum.textContent = state.split + "%";
-}
-
-/* ====== World generation ====== */
-function respawnPoints(){
-  // Keep special points away from player start
-  const farFromPlayer = (x,y)=> (Math.abs(x-state.player.x)+Math.abs(y-state.player.y)) > 4;
-
-  do { state.echo.x = rand(W); state.echo.y = rand(H); } while(!farFromPlayer(state.echo.x,state.echo.y));
-  do { state.clue.x = rand(W); state.clue.y = rand(H); } while(!farFromPlayer(state.clue.x,state.clue.y));
-  do { state.mirror.x = rand(W); state.mirror.y = rand(H); } while(!farFromPlayer(state.mirror.x,state.mirror.y));
-}
-
-/* ====== Drawing ====== */
 function drawTile(x,y,fill,stroke){
-  ctx.fillStyle = fill;
-  ctx.fillRect(ox + x*TS, oy + y*TS, TS-2, TS-2);
-  if(stroke){
-    ctx.strokeStyle = stroke;
-    ctx.strokeRect(ox + x*TS + 0.5, oy + y*TS + 0.5, TS-3, TS-3);
-  }
+  ctx.fillStyle=fill; ctx.fillRect(x*TS,y*TS,TS-2,TS-2);
+  if(stroke){ ctx.strokeStyle=stroke; ctx.strokeRect(x*TS+.5,y*TS+.5,TS-3,TS-3); }
 }
-
-function glitchPass(intensity){
-  // cheap “scanline/glitch” when split is high
-  const lines = Math.floor(intensity * 8);
-  ctx.globalAlpha = 0.10 + intensity*0.25;
-  for(let i=0;i<lines;i++){
-    const y = rand(c.height);
-    ctx.fillStyle = (i%2===0) ? "#ff2d55" : "#00ffd5";
-    ctx.fillRect(0, y, c.width, 1);
-    if(intensity > 0.55 && Math.random() < intensity){
-      const w = rand(60)+20;
-      const x = rand(c.width-w);
-      ctx.fillRect(x, y+1, w, 1);
-    }
-  }
-  ctx.globalAlpha = 1;
+function glitch(i){
+  const lines=Math.floor(i*8); ctx.globalAlpha=.1+i*.25;
+  for(let k=0;k<lines;k++){ const y=rand(c.height); ctx.fillStyle=k%2?"#00ffd5":"#ff2d55"; ctx.fillRect(0,y,c.width,1); }
+  ctx.globalAlpha=1;
 }
-
 function draw(){
   ctx.clearRect(0,0,c.width,c.height);
+  ctx.fillStyle="#0b0b12"; ctx.fillRect(0,0,c.width,c.height);
 
-  // Background gradient vibe
-  const g = ctx.createLinearGradient(0,0,0,c.height);
-  g.addColorStop(0, "#060610");
-  g.addColorStop(1, "#0b0b12");
-  ctx.fillStyle = g;
-  ctx.fillRect(0,0,c.width,c.height);
-
-  // City grid: “wet pavement”
   for(let y=0;y<H;y++){
     for(let x=0;x<W;x++){
-      const puddle = ((x*13 + y*7 + state.tick) % 19 === 0);
-      const base = puddle ? "#0f1020" : "#0e0f18";
-      drawTile(x,y, base, "rgba(255,255,255,.05)");
+      if(state.fog[y][x]) drawTile(x,y,"#0e0f18","rgba(255,255,255,.05)");
+      else drawTile(x,y,"#07070a","rgba(255,255,255,.02)");
     }
   }
 
-  // Clue marker (only during TRACE/HUNT)
-  if(!state.ended && (state.phase==="TRACE" || state.phase==="HUNT")){
-    const pulse = 0.25 + 0.25*Math.sin(state.tick/10);
-    ctx.globalAlpha = 0.55 + pulse;
-    drawTile(state.clue.x, state.clue.y, "rgba(255,204,0,.25)", "rgba(255,204,0,.55)");
-    ctx.globalAlpha = 1;
-  }
-
-  // Mirror zone (only during MIRROR)
-  if(!state.ended && state.phase==="MIRROR"){
-    const pulse = 0.25 + 0.25*Math.sin(state.tick/8);
-    ctx.globalAlpha = 0.45 + pulse;
-    drawTile(state.mirror.x, state.mirror.y, "rgba(0,255,213,.20)", "rgba(0,255,213,.55)");
-    ctx.globalAlpha = 1;
-  }
-
-  // Echo “shimmer” (sometimes invisible when split is low)
-  const dist = Math.abs(state.player.x-state.echo.x)+Math.abs(state.player.y-state.echo.y);
-  const echoVisible = state.seenEcho || state.split > 35 || dist <= 2;
-  if(!state.ended && echoVisible){
-    ctx.globalAlpha = 0.55;
-    drawTile(state.echo.x, state.echo.y, "rgba(255,45,85,.35)", "rgba(255,45,85,.70)");
-    ctx.globalAlpha = 1;
-  } else {
-    // faint hint occasionally
-    if(!state.ended && Math.random() < 0.06){
-      ctx.globalAlpha = 0.12;
-      drawTile(state.echo.x, state.echo.y, "rgba(255,45,85,.25)");
-      ctx.globalAlpha = 1;
-    }
-  }
-
-  // Player
-  drawTile(state.player.x, state.player.y, "rgba(44,255,120,.35)", "rgba(44,255,120,.85)");
-
-  // Foreground vignette
-  ctx.globalAlpha = 0.35;
-  ctx.fillStyle = "#000";
-  ctx.fillRect(0,0,c.width,6);
-  ctx.fillRect(0,c.height-6,c.width,6);
-  ctx.globalAlpha = 1;
-
-  // Split distortion
-  glitchPass(state.split/100);
+  // player
+  drawTile(state.px,state.py,"rgba(44,255,120,.35)","rgba(44,255,120,.9)");
+  glitch(state.split/100);
 }
 
-/* ====== Game logic ====== */
-function echoStep(){
-  // Echo “slides” away or circles you depending on phase
-  const px = state.player.x, py = state.player.y;
-  let ex = state.echo.x, ey = state.echo.y;
-
-  const away = () => {
-    const dx = ex - px, dy = ey - py;
-    if(Math.abs(dx) > Math.abs(dy)) ex += Math.sign(dx);
-    else ey += Math.sign(dy);
-  };
-
-  const orbit = () => {
-    // simple orbit: move perpendicular to vector
-    const dx = px - ex, dy = py - ey;
-    if(Math.abs(dx) > Math.abs(dy)) ey += Math.sign(dx);
-    else ex -= Math.sign(dy);
-  };
-
-  if(state.phase==="TRACE") {
-    if(Math.random() < 0.65) away(); else orbit();
-  } else if(state.phase==="HUNT") {
-    if(Math.random() < 0.40) away(); else orbit();
-  } else { // MIRROR
-    if(Math.random() < 0.30) away(); else orbit();
-  }
-
-  state.echo.x = clamp(ex,0,W-1);
-  state.echo.y = clamp(ey,0,H-1);
-}
-
-function updateSplitFromDistance(){
-  const d = Math.abs(state.player.x-state.echo.x)+Math.abs(state.player.y-state.echo.y);
-  const proximity = 1 - clamp(d/8, 0, 1);
-  // proximity adds pressure; movement adds small pressure elsewhere
-  const target = Math.floor(proximity*100);
-  // ease split toward target
-  state.split = clamp(state.split + (target - state.split)*0.10, 0, 100);
+function updateUI(){
   splitFill.style.width = state.split + "%";
   splitNum.textContent = Math.round(state.split) + "%";
-  if(d <= 2) state.seenEcho = true;
+  repNum.textContent = state.rep;
+  barsNum.textContent = state.bars;
+  hpNum.textContent = state.hp;
+}
+
+const EVENTS = [
+  {
+    t:"A heckler corners you with rumors. Codename: SHADY watches.",
+    choices:[
+      { label:"Clap back (Rep +5, Split +5)", eff:()=>{state.rep+=5; state.split+=5;} },
+      { label:"Walk away (Split -5)", eff:()=>{state.split-=5;} },
+      { label:"Pay it off (Bars -5, Rep +2)", eff:()=>{state.bars=Math.max(0,state.bars-5); state.rep+=2;} },
+    ]
+  },
+  {
+    t:"You find a burnt notebook of half-written bars.",
+    choices:[
+      { label:"Pocket it (Bars +10, Split +5)", eff:()=>{state.bars+=10; state.split+=5;} },
+      { label:"Read it aloud (Rep +4, HP -5)", eff:()=>{state.rep+=4; state.hp-=5;} },
+    ]
+  },
+  {
+    t:"A backroom stage offers a risky open mic.",
+    choices:[
+      { label:"Go on stage (Rep +8, Split +8)", eff:()=>{state.rep+=8; state.split+=8;} },
+      { label:"No show (Split -4)", eff:()=>{state.split-=4;} },
+    ]
+  },
+  {
+    t:"Tabloids print your shadow, not your face.",
+    choices:[
+      { label:"Lean into it (Rep +6, Split +6)", eff:()=>{state.rep+=6; state.split+=6;} },
+      { label:"Lawyer up (Bars -8, Split -4)", eff:()=>{state.bars=Math.max(0,state.bars-8); state.split-=4;} },
+    ]
+  },
+  {
+    t:"A late-night studio session drains you.",
+    choices:[
+      { label:"Grind through (Bars +6, HP -6)", eff:()=>{state.bars+=6; state.hp-=6;} },
+      { label:"Call it (Split -6)", eff:()=>{state.split-=6;} },
+    ]
+  },
+];
+
+function triggerEvent(){
+  const e = EVENTS[rand(EVENTS.length)];
+  logEl.textContent = e.t;
+  choicesEl.innerHTML = "";
+  e.choices.forEach(ch=>{
+    const b=document.createElement("button");
+    b.className="choiceBtn";
+    b.textContent = ch.label;
+    b.onclick = ()=>{
+      ch.eff();
+      state.split = clamp(state.split,0,100);
+      state.hp = clamp(state.hp,0,100);
+      updateUI();
+      choicesEl.innerHTML="";
+      logEl.textContent = "The block settles. The city remembers your choice.";
+      checkEnd();
+      draw();
+    };
+    choicesEl.appendChild(b);
+  });
+}
+
+function checkEnd(){
+  if(state.hp<=0){
+    state.ended=true;
+    logEl.textContent="You collapse. Codename: SHADY keeps walking. END.";
+  }
+  if(state.split>=100){
+    state.ended=true;
+    logEl.textContent="You merge with the shadow. The city blurs into one voice. END.";
+  }
+  if(state.rep>=40 && state.bars>=40){
+    state.ended=true;
+    logEl.textContent="You outgrow the alley. Shady fades to rumor. END.";
+  }
 }
 
 function move(dx,dy){
   if(state.ended) return;
+  const nx=clamp(state.px+dx,0,W-1);
+  const ny=clamp(state.py+dy,0,H-1);
+  state.px=nx; state.py=ny;
 
-  state.player.x = clamp(state.player.x + dx, 0, W-1);
-  state.player.y = clamp(state.player.y + dy, 0, H-1);
-
-  // walking pushes split slightly
-  bumpSplit(1);
-
-  // clue pickup
-  if((state.phase==="TRACE" || state.phase==="HUNT") &&
-     state.player.x===state.clue.x && state.player.y===state.clue.y){
-    if(state.phase==="TRACE"){
-      setPhase("HUNT");
-      setLog("You found a note: “HE TALKS WHEN YOU BLEED.” The alley tilts. Echo is closer now.");
-      bumpSplit(10);
-      // move clue again for HUNT
-      do { state.clue.x=rand(W); state.clue.y=rand(H); } while(Math.abs(state.clue.x-state.player.x)+Math.abs(state.clue.y-state.player.y) < 4);
-    } else {
-      setPhase("MIRROR");
-      setLog("Second trace. A mirror shard. Your reflection smirks late. Go to the MIRROR ZONE.");
-      bumpSplit(12);
-    }
-  }
-
-  // mirror zone unlock → ending choices become available when you reach it
-  if(state.phase==="MIRROR" && state.player.x===state.mirror.x && state.player.y===state.mirror.y){
-    setLog("Mirror Zone. Your pulse syncs with footsteps that aren’t there. Find Echo… or let it find you.");
-    bumpSplit(6);
-  }
-
-  // Echo movement + split update
-  echoStep();
-  updateSplitFromDistance();
-  state.tick++;
-  draw();
-}
-
-/* ====== Actions ====== */
-function scan(){
-  if(state.ended) return;
-
-  const d = Math.abs(state.player.x-state.echo.x)+Math.abs(state.player.y-state.echo.y);
-  bumpSplit(6);
-
-  if(d <= 1){
-    setLog("SCAN: The air cracks. Echo is on top of you.");
-    state.seenEcho = true;
-  } else if(d <= 3){
-    setLog("SCAN: Whisper close. Like your own voice, half a second late.");
-  } else if(d <= 6){
-    setLog("SCAN: Static in your teeth. Wrong footsteps, far right.");
+  if(!state.fog[ny][nx]){
+    state.fog[ny][nx]=true;
+    triggerEvent();
   } else {
-    setLog("SCAN: Nothing. Too quiet. That’s worse.");
+    logEl.textContent="Old ground. The city’s already said this part.";
   }
 
-  // scanning makes Echo reposition slightly
-  echoStep();
-  updateSplitFromDistance();
-  state.tick++;
+  state.split = clamp(state.split+1,0,100);
+  updateUI();
   draw();
 }
 
-function endWith(ending){
-  state.ended = true;
-  state.ending = ending;
-  setPhase("END");
-
-  choicesEl.style.display = "none";
-  if(ending==="MERGE"){
-    setLog("ENDING: MERGE. You stop running. The alley becomes one long breath. You and Echo… agree.");
-  } else if(ending==="BURN"){
-    setLog("ENDING: BURN. You break the mirror and leave no reflection. Echo screams—then it’s just you.");
-  } else {
-    setLog("ENDING: FLEE. You walk away. The city keeps the extra shadow. It follows… but not tonight.");
-  }
-  bumpSplit(-100);
-  draw();
-}
-
-function showChoices(){
-  choicesEl.innerHTML = "";
-  choicesEl.style.display = "flex";
-
-  const mk = (label, ending) => {
-    const b = document.createElement("button");
-    b.textContent = label;
-    b.onclick = ()=> endWith(ending);
-    return b;
-  };
-
-  choicesEl.appendChild(mk("MERGE (take control)", "MERGE"));
-  choicesEl.appendChild(mk("BURN IT (end Echo)", "BURN"));
-  choicesEl.appendChild(mk("FLEE (leave it alive)", "FLEE"));
-}
-
-function confront(){
-  if(state.ended) return;
-
-  const onEcho = state.player.x===state.echo.x && state.player.y===state.echo.y;
-  const inMirror = (state.phase==="MIRROR" && state.player.x===state.mirror.x && state.player.y===state.mirror.y);
-
-  bumpSplit(10);
-
-  if(onEcho){
-    setLog("You grabbed Echo. It feels like grabbing your own wrist in a dream.");
-    // If in mirror phase, offer endings
-    if(state.phase==="MIRROR"){
-      setLog("Echo whispers: “Pick one.”");
-      showChoices();
-    } else {
-      // early confront: Echo slips away, raises tension
-      setLog("Too soon. Echo dissolves into red static. Find the traces.");
-      echoStep(); echoStep();
-    }
-    state.seenEcho = true;
-  } else if(inMirror){
-    setLog("Mirror Zone confrontation… with nobody there. Echo is close. SCAN again.");
-  } else {
-    setLog("You swing at shadows. The alley laughs back.");
-    // miss = Echo gains distance sometimes
-    if(Math.random() < 0.6) echoStep();
-  }
-
-  updateSplitFromDistance();
-  state.tick++;
-  draw();
-}
+/* Swipe */
+let t0=null;
+c.addEventListener("touchstart",e=>{const t=e.changedTouches[0]; t0={x:t.clientX,y:t.clientY};},{passive:false});
+c.addEventListener("touchend",e=>{
+  if(!t0) return; const t=e.changedTouches[0]; const dx=t.clientX-t0.x, dy=t.clientY-t0.y; t0=null;
+  if(Math.max(Math.abs(dx),Math.abs(dy))<18) return;
+  Math.abs(dx)>Math.abs(dy) ? move(dx>0?1:-1,0) : move(0,dy>0?1:-1);
+},{passive:false});
 
 function reset(){
-  state.player = {x:2,y:7};
-  state.split = 0;
-  state.tick = 0;
-  state.phase = "TRACE";
-  state.seenEcho = false;
-  state.ended = false;
-  state.ending = null;
-  choicesEl.style.display = "none";
-  respawnPoints();
-  setPhase("TRACE");
-  setLog("You wake in the alley. Two footprints. One of them is yours.");
-  splitFill.style.width = "0%";
-  splitNum.textContent = "0%";
-  draw();
+  state.px=8; state.py=5;
+  state.fog = Array.from({length:H},()=>Array(W).fill(false));
+  state.fog[state.py][state.px]=true;
+  state.split=10; state.rep=0; state.bars=0; state.hp=100; state.ended=false;
+  logEl.textContent="The city is blank. Each step writes a line.";
+  choicesEl.innerHTML="";
+  updateUI(); draw();
 }
 
-/* ====== Touch swipe controls ====== */
-let touchStart = null;
-c.addEventListener("touchstart", (e)=>{
-  e.preventDefault();
-  const t = e.changedTouches[0];
-  touchStart = {x:t.clientX, y:t.clientY};
-}, {passive:false});
-
-c.addEventListener("touchend", (e)=>{
-  e.preventDefault();
-  if(!touchStart) return;
-  const t = e.changedTouches[0];
-  const dx = t.clientX - touchStart.x;
-  const dy = t.clientY - touchStart.y;
-  touchStart = null;
-
-  const ax = Math.abs(dx), ay = Math.abs(dy);
-  if(Math.max(ax,ay) < 18) return; // ignore tiny swipes
-
-  if(ax > ay){
-    move(dx>0 ? 1 : -1, 0);
-  } else {
-    move(0, dy>0 ? 1 : -1);
-  }
-}, {passive:false});
-
-/* Buttons */
-scanBtn.onclick = scan;
-confBtn.onclick = confront;
 resetBtn.onclick = reset;
-
-/* Start */
-respawnPoints();
-reset();
+reset(); draw();
 </script>
 </body>
 </html>
