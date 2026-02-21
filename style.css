@@ -57,16 +57,14 @@ body{
 .hudItem b{font-size:14px}
 
 .wrap{max-width:1100px; margin:0 auto; padding:18px 16px}
-
 .gameShell{
   position:relative;
   border:1px solid var(--line);
   border-radius:16px;
   overflow:hidden;
   background: rgba(0,0,0,.25);
-  touch-action:none; /* critical for iPhone controls */
+  touch-action:none;
 }
-
 canvas{
   width:100%;
   height:auto;
@@ -77,8 +75,9 @@ canvas{
 .overlay{
   position:absolute; inset:0;
   display:grid; place-items:center;
-  background: rgba(3,6,12,.78);
+  background: rgba(3,6,12,.75);
   z-index: 50;
+  pointer-events: auto;
 }
 
 .panel{
@@ -88,11 +87,9 @@ canvas{
   background: rgba(17,24,38,.92);
   padding:18px 18px 14px;
 }
-
 .panelTitle{font-size:18px; font-weight:900; margin-bottom:10px}
 .panel ul{margin:0 0 12px 18px; color:var(--muted)}
 .panelHint{color:var(--muted); font-size:13px; margin-bottom:12px}
-
 button{
   appearance:none;
   border:1px solid rgba(103,232,249,.45);
@@ -118,7 +115,7 @@ button:active{transform: translateY(1px)}
   transform: translateY(6px);
   transition: .2s ease;
   pointer-events:none;
-  z-index: 60; /* above everything */
+  z-index: 60;
 }
 .toast.show{opacity:1; transform: translateY(0)}
 
@@ -132,7 +129,7 @@ button:active{transform: translateY(1px)}
   padding:12px;
   gap:12px;
   pointer-events:none;
-  z-index: 10; /* BELOW overlay */
+  z-index: 10;
 }
 
 .pad, .btnCluster{
@@ -164,6 +161,9 @@ button:active{transform: translateY(1px)}
   font-weight:900;
   letter-spacing:.2px;
 }
+
+/* Hide touch buttons while menu/overlay is up */
+.touchUI.hidden{ display:none; }
 
 @media (min-width: 900px){
   .padBtn{width:62px; height:62px}
